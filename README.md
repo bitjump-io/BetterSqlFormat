@@ -1,6 +1,6 @@
-# JavaScript Library to format T-SQL
+# Better-SQL-Format - A JavaScript library to format T-SQL
 
-This is a JavaScript library to format T-SQL written in F#. It is compiled to JavaScript with Fable.
+This is a JavaScript library to format T-SQL. The source code is written in F# which is then compiled to JavaScript with [Fable](https://fable.io).
 
 ## Requirements
 
@@ -8,28 +8,22 @@ This is a JavaScript library to format T-SQL written in F#. It is compiled to Ja
 * [node.js](https://nodejs.org) with [npm](https://www.npmjs.com/)
 * An F# editor like Visual Studio, Visual Studio Code with [Ionide](http://ionide.io/) or [JetBrains Rider](https://www.jetbrains.com/rider/).
 
-## Building and running the app
+## Installing dependencies
 
-* Install JS dependencies: `npm install`
-* Install F# dependencies: `npm start`
-* After the first compilation is finished, in your browser open: http://localhost:8080/
-
-Any modification you do to the F# code will be reflected in the web page after saving.
+Run `npm install`
 
 ## Project structure
 
-### npm
+### SQL formatting code
 
-JS dependencies are declared in `package.json`, while `package-lock.json` is a lock file automatically generated.
+The logic that formats SQL code is in the `src/lib` folder.
 
-### Webpack
+### Tests
 
-[Webpack](https://webpack.js.org) is a JS bundler with extensions, like a static dev server that enables hot reloading on code changes. Fable interacts with Webpack through the `fable-loader`. Configuration for Webpack is defined in the `webpack.config.js` file. Note this sample only includes basic Webpack configuration for development mode, if you want to see a more comprehensive configuration check the [Fable webpack-config-template](https://github.com/fable-compiler/webpack-config-template/blob/master/webpack.config.js).
+Unit tests are in the `src/lib.tests` folder.  
+Run tests with `npm run test`
 
-### F#
+### Generated JavaScript library
 
-The sample only contains two F# files: the project (.fsproj) and a source file (.fs) in the `src` folder.
-
-### Web assets
-
-The `index.html` file and other assets like an icon can be found in the `public` folder.
+The generated `better-sql-format.js` JavaScript library is in the `public` folder.  
+Update the library with `npm run build`

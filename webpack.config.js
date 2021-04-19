@@ -9,7 +9,7 @@ module.exports = {
     entry: "./src/lib/Main.fs.js",
     output: {
         path: path.join(__dirname, "./public"),
-        filename: "bundle.js",
+        filename: "better-sql-format.js",
     },
     module: {
     }

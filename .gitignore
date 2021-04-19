@@ -1,5 +1,7 @@
 node_modules
-src/.fable
 bin
 obj
 *.fs.js
+.fable
+.fake
+.ionide
