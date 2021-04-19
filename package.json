@@ -1,7 +1,9 @@
 {
   "private": true,
   "scripts": {
-    "start": "dotnet fable watch src --run webpack-dev-server"
+    "start": "dotnet fable watch src --run webpack-dev-server",
+    "build": "dotnet fable ./src/lib && webpack",
+    "test": "dotnet test ./src/lib.tests/BetterSqlFormat.Tests.fsproj"
   },
   "devDependencies": {
     "webpack": "^4.46.0",

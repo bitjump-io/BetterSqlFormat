@@ -1,6 +1,6 @@
-# Fable Minimal App
+# JavaScript Library to format T-SQL
 
-This is a small Fable app project so you can easily get started and add your own code easily in it.
+This is a JavaScript library to format T-SQL written in F#. It is compiled to JavaScript with Fable.
 
 ## Requirements
 
