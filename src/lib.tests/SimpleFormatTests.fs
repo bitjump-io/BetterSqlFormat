@@ -5,5 +5,7 @@ open Xunit
 open Main
 
 [<Fact>]
-let ``select 3 test`` () =
-  Assert.Equal(formatSql "select 3", "select 3")
+let ``tokenize test 1`` () =
+  let actual = tokenize "select 3"
+  let expected = ["select"; " "; "3"]
+  Assert.True((actual = expected))
