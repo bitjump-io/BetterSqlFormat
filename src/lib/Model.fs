@@ -2,7 +2,8 @@ module Model
 
 // A separator or a value between separators.
 // E.g. "order by" contains one separator (a space) and a token to the left and right.
-type Token = string
+type Token =
+| Token of string
 
 type Whitespace = 
 | Whitespace of string

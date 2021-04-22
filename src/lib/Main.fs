@@ -8,10 +8,9 @@ let tokenize (sqlStr: string) =
   // A single operator as <> is divided into two tokens.
   // A word like "declare" is always one token.
   let mutable tokens = []
-  let mutable pos = 0
   let mutable lastTokenEndPos = -1
   let sqlStrLen = sqlStr.Length
-  while pos < sqlStrLen do
+  for pos in [0..sqlStrLen-1] do
     let c = sqlStr.[pos]
     if (c = ' ' // Whitespace
     || c = '\t' // Whitespace
@@ -40,25 +39,40 @@ let tokenize (sqlStr: string) =
     || c = '.' // Member separator
     || c = ':' // Scope resolution as ::
     || c = ';' // Delimitor
+    || c = ',' // Separator
     ) then
       // Current char is a separator/operator so complete pevious token.
-      let newTokenLen = pos - (lastTokenEndPos + 1)
-      if (newTokenLen > 0) then
-        let newToken = sqlStr.Substring(lastTokenEndPos + 1, newTokenLen)
+      let newToken = sqlStr.[lastTokenEndPos + 1 .. pos - 1]
+      if (newToken <> "") then
         tokens <- newToken :: tokens
       // Also create token for current separator/operator character.
-      let newToken = sqlStr.Substring(pos, 1)
+      let newToken = sqlStr.[pos .. pos]
       tokens <- newToken :: tokens
       lastTokenEndPos <- pos
-    pos <- pos + 1
-  // At the end push remaining chars as token.
-  let newTokenLen = pos - (lastTokenEndPos + 1)
-  if (newTokenLen > 0) then
-    let newToken = sqlStr.Substring(lastTokenEndPos + 1, newTokenLen)
-    tokens <- newToken :: tokens
+    if (pos = sqlStrLen-1) then
+      // At the end push remaining chars as token.
+      let newToken = sqlStr.[lastTokenEndPos + 1 .. pos]
+      if (newToken <> "") then
+        tokens <- newToken :: tokens
   List.rev tokens
 
-// let parseSql sqlStr =
+
+// Combine tokens that together are one string.
+// This is useful because a string may contain a keyword as in 'Make an update.'
+// let combineStringTokens sqlStr =
+//   let tokens = tokenize sqlStr
+//   let result = []
+//   let mutable combinedTokens = []
+//   let tokensLen = List.length tokens
+//   for i in [0..tokensLen] do
+//     if (token = "'") then
+//       combinedTokens <- token :: combinedTokens
+
+
+
+// // Combine tokens that together are one comment.
+// let combineCommentTokens sqlStr =
+//   let tokens = tokenize sqlStr
 
 let formatSql sqlStr =
   sqlStr
