@@ -5,5 +5,5 @@ open SimpleFormatTests
 [<EntryPoint>]
 let main _ =
   // Add the test to debug here.
-  ``tokenize test sql4``()
+  ``combineStringTokens test sql7``()
   0

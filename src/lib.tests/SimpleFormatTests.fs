@@ -16,6 +16,12 @@ let sql4 = @"SELECT*
 -- Test comment
 FROM DimEmployee"
 
+let sql5 = "select 3, 'hello world'"
+
+let sql6 = @"select 'What''s \that?; .-|\"" bike.', 'x',4+5"
+
+let sql7 = @"select '''','''''valid sql''' "
+
 [<Fact>]
 let ``tokenize test sql1`` () =
   let actual = tokenize sql1
@@ -38,4 +44,25 @@ let ``tokenize test sql3`` () =
 let ``tokenize test sql4`` () =
   let actual = tokenize sql4
   let expected = ["SELECT"; "*"; "\n"; "-"; "-"; " "; "Test"; " "; "comment"; "\n"; "FROM"; " "; "DimEmployee"]
+  Assert.True((actual = expected))
+
+[<Fact>]
+let ``combineStringTokens test sql5`` () =
+  let tokens = tokenize sql5
+  let actual = combineStringTokens tokens
+  let expected = ["select"; " "; "3"; ","; " "; "'hello world'"]
+  Assert.True((actual = expected))
+
+[<Fact>]
+let ``combineStringTokens test sql6`` () =
+  let tokens = tokenize sql6
+  let actual = combineStringTokens tokens
+  let expected = ["select"; " "; @"'What''s \that?; .-|\"" bike.'"; ","; " "; "'x'"; ","; "4"; "+"; "5"]
+  Assert.True((actual = expected))
+
+[<Fact>]
+let ``combineStringTokens test sql7`` () =
+  let tokens = tokenize sql7
+  let actual = combineStringTokens tokens
+  let expected = ["select"; " "; "''''"; ","; "'''''valid sql'''"; " "]
   Assert.True((actual = expected))

@@ -47,38 +47,51 @@ let tokenize (sqlStr: string) =
       if (newToken <> "") then
         tokens <- newToken :: tokens
       // Also create token for current separator/operator character.
-      let newToken = sqlStr.[pos .. pos]
+      let newToken = sqlStr.[pos..pos]
       tokens <- newToken :: tokens
       lastTokenEndPos <- pos
     if (pos = sqlStrLen-1) then
       // At the end push remaining chars as token.
       let newToken = sqlStr.[lastTokenEndPos + 1 .. pos]
       if (newToken <> "") then
-        tokens <- newToken :: tokens
+        tokens <- newToken::tokens
   List.rev tokens
 
 type StringTokenResult =
 | NoString of string // no sql string token
 | StartOfString of string // sql string start token
-| InString of string // sql string start token
+| InString of string // sql string text token.
+| InStringDoubleQuoteStart of string // sql string text token.
+| InStringDoubleQuoteEnd of string // sql string text token.
 | EndOfString of string // sql string end token
 
 // Converts list of string in list of StringTokenResult. The result list is reversed.
 let rec convertToStringTokenResults (tokens: list<string>) (lastResult: StringTokenResult) (result: list<StringTokenResult>) =
   match tokens with
   | token :: tail ->
-    match lastResult with
-    | InString lastToken when (token = "'" && lastToken <> "\\") ->
-      convertToStringTokenResults tail (EndOfString token) ((EndOfString token) :: result)
-    | InString _ ->
-      convertToStringTokenResults tail (InString token) ((InString token) :: result)
-    | StartOfString _ when (token <> "'") ->
-      convertToStringTokenResults tail (InString token) ((InString token) :: result)
-    | _ when (token = "'") ->
-      convertToStringTokenResults tail (StartOfString token) ((StartOfString token) :: result)
-    | _ ->
-      convertToStringTokenResults tail (NoString token) ((NoString token) :: result)
-  | [] -> result
+    let nextToken = List.tryHead tail
+    let converted = 
+      match lastResult with
+      | StartOfString _ | InString _ | InStringDoubleQuoteEnd _ when (token = "'" && nextToken = Some("'")) ->
+        InStringDoubleQuoteStart token
+      | InStringDoubleQuoteStart _ when (token = "'") ->
+        InStringDoubleQuoteEnd token
+      | StartOfString _ | InStringDoubleQuoteEnd _ when (token <> "'") ->
+        InString token
+      | InString _ | InStringDoubleQuoteEnd _ when (token = "'") ->
+        EndOfString token
+      | InString _ ->
+        InString token
+      | NoString _ when (token = "'") ->
+        StartOfString token
+      | EndOfString _ when (token <> "'") ->
+        NoString token
+      | NoString _ when (token <> "'") ->
+        NoString token
+      | _ ->
+        failwith token
+    convertToStringTokenResults tail converted (converted::result)
+  | [] -> List.rev result
 
 // Combine tokens that together are one string.
 // This is useful because a string may contain a keyword as in 'Make an update.'
@@ -88,17 +101,20 @@ let rec combineStringTokens (tokens: list<string>) =
   let rec doCombine (tokens: list<StringTokenResult>) (currentStringTokens: list<string>) (newTokens: list<string>) =
     match tokens with
     | head::tail ->
-      match head with
-      | NoString value -> doCombine tail [] (value :: newTokens)
-      | StartOfString value -> doCombine tail [value] (newTokens)
-      | InString value -> doCombine tail (value::currentStringTokens) (newTokens)
-      | EndOfString value -> 
-        let tokensOfString = List.rev (value::currentStringTokens)
-        let strWithQuotes = String.Join("", tokensOfString)
-        doCombine tail [] (strWithQuotes :: newTokens)
+      let (currentStringParts, newTokensResult) = 
+        match head with
+        | NoString value -> [], (value::newTokens)
+        | StartOfString value -> [value], (newTokens)
+        | InString value | InStringDoubleQuoteStart value | InStringDoubleQuoteEnd value -> 
+          (value::currentStringTokens), (newTokens)
+        | EndOfString value -> 
+          let tokensOfString = List.rev (value::currentStringTokens)
+          let strWithQuotes = String.Join("", tokensOfString)
+          [], (strWithQuotes :: newTokens)
+      doCombine tail currentStringParts newTokensResult
     | [] -> newTokens
 
-  doCombine markedTokens [] []
+  List.rev (doCombine markedTokens [] [])
   // let result = []
   // let mutable combinedTokens = []
   // let tokensLen = List.length tokens
