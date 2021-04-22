@@ -1,6 +1,7 @@
 module Main
 
 open Model
+open System
 
 let tokenize (sqlStr: string) =
   // Add characters to the token until there is a separator.
@@ -56,19 +57,55 @@ let tokenize (sqlStr: string) =
         tokens <- newToken :: tokens
   List.rev tokens
 
+type StringTokenResult =
+| NoString of string // no sql string token
+| StartOfString of string // sql string start token
+| InString of string // sql string start token
+| EndOfString of string // sql string end token
+
+// Converts list of string in list of StringTokenResult. The result list is reversed.
+let rec convertToStringTokenResults (tokens: list<string>) (lastResult: StringTokenResult) (result: list<StringTokenResult>) =
+  match tokens with
+  | token :: tail ->
+    match lastResult with
+    | InString lastToken when (token = "'" && lastToken <> "\\") ->
+      convertToStringTokenResults tail (EndOfString token) ((EndOfString token) :: result)
+    | InString _ ->
+      convertToStringTokenResults tail (InString token) ((InString token) :: result)
+    | StartOfString _ when (token <> "'") ->
+      convertToStringTokenResults tail (InString token) ((InString token) :: result)
+    | _ when (token = "'") ->
+      convertToStringTokenResults tail (StartOfString token) ((StartOfString token) :: result)
+    | _ ->
+      convertToStringTokenResults tail (NoString token) ((NoString token) :: result)
+  | [] -> result
 
 // Combine tokens that together are one string.
 // This is useful because a string may contain a keyword as in 'Make an update.'
-// let combineStringTokens sqlStr =
-//   let tokens = tokenize sqlStr
-//   let result = []
-//   let mutable combinedTokens = []
-//   let tokensLen = List.length tokens
-//   for i in [0..tokensLen] do
-//     if (token = "'") then
-//       combinedTokens <- token :: combinedTokens
+let rec combineStringTokens (tokens: list<string>) =
+  let markedTokens = convertToStringTokenResults tokens (NoString "") []
+  
+  let rec doCombine (tokens: list<StringTokenResult>) (currentStringTokens: list<string>) (newTokens: list<string>) =
+    match tokens with
+    | head::tail ->
+      match head with
+      | NoString value -> doCombine tail [] (value :: newTokens)
+      | StartOfString value -> doCombine tail [value] (newTokens)
+      | InString value -> doCombine tail (value::currentStringTokens) (newTokens)
+      | EndOfString value -> 
+        let tokensOfString = List.rev (value::currentStringTokens)
+        let strWithQuotes = String.Join("", tokensOfString)
+        doCombine tail [] (strWithQuotes :: newTokens)
+    | [] -> newTokens
 
-
+  doCombine markedTokens [] []
+  // let result = []
+  // let mutable combinedTokens = []
+  // let tokensLen = List.length tokens
+  
+  // if tokens do
+  //   if (token = "'") then
+  //     combinedTokens <- token :: combinedTokens
 
 // // Combine tokens that together are one comment.
 // let combineCommentTokens sqlStr =
