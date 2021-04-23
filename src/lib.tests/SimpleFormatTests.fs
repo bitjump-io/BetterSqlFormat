@@ -20,11 +20,13 @@ let sql5 = "select 3, 'hello world'"
 
 let sql6 = @"select 'What''s \that?; .-|\"" bike.', 'x',4+5"
 
-let sql7 = @"select '''','''''valid sql''' "
+let sql7 = @"select N'some unicode',N'and Nmore'"
 
-let sql8 = @"select -- hello world!"
+let sql8 = @"select '''','''''valid sql''' "
 
-let sql9 = @"select -- hello
+let sql9 = @"select -- hello world!"
+
+let sql10 = @"select -- hello
 -- world
 select 4"
 
@@ -70,19 +72,26 @@ let ``combineStringTokens test sql6`` () =
 let ``combineStringTokens test sql7`` () =
   let tokens = tokenize sql7
   let actual = combineStringTokens tokens
-  let expected = ["select"; " "; "''''"; ","; "'''''valid sql'''"; " "]
+  let expected = ["select"; " "; "N'some unicode'"; ","; "N'and Nmore'"]
   Assert.True((actual = expected))
 
 [<Fact>]
-let ``combineCommentTokens test sql8`` () =
+let ``combineStringTokens test sql8`` () =
   let tokens = tokenize sql8
-  let actual = combineCommentTokens tokens
-  let expected = ["select"; " "; "-- hello world!"]
+  let actual = combineStringTokens tokens
+  let expected = ["select"; " "; "''''"; ","; "'''''valid sql'''"; " "]
   Assert.True((actual = expected))
 
 [<Fact>]
 let ``combineCommentTokens test sql9`` () =
   let tokens = tokenize sql9
+  let actual = combineCommentTokens tokens
+  let expected = ["select"; " "; "-- hello world!"]
+  Assert.True((actual = expected))
+
+[<Fact>]
+let ``combineCommentTokens test sql10`` () =
+  let tokens = tokenize sql10
   let actual = combineCommentTokens tokens
   let expected = ["select"; " "; "-- hello"; "\n"; "-- world"; "\n"; "select"; " "; "4"]
   Assert.True((actual = expected))

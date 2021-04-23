@@ -59,11 +59,14 @@ let tokenize (sqlStr: string) =
 
 type StringToken =
 | NoString of string // no sql string token.
+| UnicodePrefix of string // The N before a stirng.
 | StartOfString of string // sql string start token.
 | InString of string // sql string text token.
 | InStringDoubleQuoteStart of string // sql string text token.
 | InStringDoubleQuoteEnd of string // sql string text token.
 | EndOfString of string // sql string end token.
+
+// todo: test if N can be lower case and if space as in N 'some text' is allowed.
 
 // Converts list of string in list of StringToken.
 let rec convertToStringTokens (tokens: list<string>) (lastResult: StringToken) (result: list<StringToken>) =
@@ -80,8 +83,10 @@ let rec convertToStringTokens (tokens: list<string>) (lastResult: StringToken) (
         InString token
       | InString _ | InStringDoubleQuoteEnd _ when (token = "'") ->
         EndOfString token
-      | NoString _ when (token = "'") ->
+      | NoString _ | UnicodePrefix _ when (token = "'") ->
         StartOfString token
+      | NoString _ when (token = "N" && nextToken = Some("'")) ->
+        UnicodePrefix token
       | EndOfString _ | NoString _ when (token <> "'") ->
         NoString token
       | _ ->
@@ -100,8 +105,9 @@ let rec combineStringTokens (tokens: list<string>) =
       let (currentStringParts, newTokensResult) = 
         match head with
         | NoString value -> [], (value::newTokens)
-        | StartOfString value -> [value], newTokens
-        | InString value | InStringDoubleQuoteStart value | InStringDoubleQuoteEnd value -> 
+        // currentStringTokens will contain "N" if previous token was UnicodePrefix.
+        | StartOfString value | UnicodePrefix value when currentStringTokens = [] -> [value], newTokens
+        | StartOfString value | InString value | InStringDoubleQuoteStart value | InStringDoubleQuoteEnd value -> 
           (value::currentStringTokens), newTokens
         | EndOfString value -> 
           let tokensOfString = List.rev (value::currentStringTokens)
