@@ -45,10 +45,10 @@ let tokenize (sqlStr: string) =
       // Current char is a separator/operator so complete pevious token.
       let newToken = sqlStr.[lastTokenEndPos + 1 .. pos - 1]
       if (newToken <> "") then
-        tokens <- newToken :: tokens
+        tokens <- newToken::tokens
       // Also create token for current separator/operator character.
       let newToken = sqlStr.[pos..pos]
-      tokens <- newToken :: tokens
+      tokens <- newToken::tokens
       lastTokenEndPos <- pos
     if (pos = sqlStrLen-1) then
       // At the end push remaining chars as token.
@@ -57,16 +57,16 @@ let tokenize (sqlStr: string) =
         tokens <- newToken::tokens
   List.rev tokens
 
-type StringTokenResult =
-| NoString of string // no sql string token
-| StartOfString of string // sql string start token
+type StringToken =
+| NoString of string // no sql string token.
+| StartOfString of string // sql string start token.
 | InString of string // sql string text token.
 | InStringDoubleQuoteStart of string // sql string text token.
 | InStringDoubleQuoteEnd of string // sql string text token.
-| EndOfString of string // sql string end token
+| EndOfString of string // sql string end token.
 
-// Converts list of string in list of StringTokenResult. The result list is reversed.
-let rec convertToStringTokenResults (tokens: list<string>) (lastResult: StringTokenResult) (result: list<StringTokenResult>) =
+// Converts list of string in list of StringToken.
+let rec convertToStringTokens (tokens: list<string>) (lastResult: StringToken) (result: list<StringToken>) =
   match tokens with
   | token :: tail ->
     let nextToken = List.tryHead tail
@@ -76,56 +76,88 @@ let rec convertToStringTokenResults (tokens: list<string>) (lastResult: StringTo
         InStringDoubleQuoteStart token
       | InStringDoubleQuoteStart _ when (token = "'") ->
         InStringDoubleQuoteEnd token
-      | StartOfString _ | InStringDoubleQuoteEnd _ when (token <> "'") ->
+      | StartOfString _ | InString _ | InStringDoubleQuoteEnd _ when (token <> "'") ->
         InString token
       | InString _ | InStringDoubleQuoteEnd _ when (token = "'") ->
         EndOfString token
-      | InString _ ->
-        InString token
       | NoString _ when (token = "'") ->
         StartOfString token
-      | EndOfString _ when (token <> "'") ->
-        NoString token
-      | NoString _ when (token <> "'") ->
+      | EndOfString _ | NoString _ when (token <> "'") ->
         NoString token
       | _ ->
         failwith token
-    convertToStringTokenResults tail converted (converted::result)
+    convertToStringTokens tail converted (converted::result)
   | [] -> List.rev result
 
 // Combine tokens that together are one string.
 // This is useful because a string may contain a keyword as in 'Make an update.'
 let rec combineStringTokens (tokens: list<string>) =
-  let markedTokens = convertToStringTokenResults tokens (NoString "") []
+  let markedTokens = convertToStringTokens tokens (NoString "") []
   
-  let rec doCombine (tokens: list<StringTokenResult>) (currentStringTokens: list<string>) (newTokens: list<string>) =
+  let rec doCombine (tokens: list<StringToken>) (currentStringTokens: list<string>) (newTokens: list<string>) =
     match tokens with
     | head::tail ->
       let (currentStringParts, newTokensResult) = 
         match head with
         | NoString value -> [], (value::newTokens)
-        | StartOfString value -> [value], (newTokens)
+        | StartOfString value -> [value], newTokens
         | InString value | InStringDoubleQuoteStart value | InStringDoubleQuoteEnd value -> 
-          (value::currentStringTokens), (newTokens)
+          (value::currentStringTokens), newTokens
         | EndOfString value -> 
           let tokensOfString = List.rev (value::currentStringTokens)
           let strWithQuotes = String.Join("", tokensOfString)
-          [], (strWithQuotes :: newTokens)
+          [], (strWithQuotes::newTokens)
       doCombine tail currentStringParts newTokensResult
     | [] -> newTokens
 
   List.rev (doCombine markedTokens [] [])
-  // let result = []
-  // let mutable combinedTokens = []
-  // let tokensLen = List.length tokens
+
+type CommentToken =
+| NoComment of string
+| InComment of string
+| StartOfComment of string // Should always be '-'.
+| EndOfComment of string // Should always be "\n" or "" (empty string if last character in text).
+
+// Converts list of string in list of CommentToken.
+let rec convertToCommentTokens (tokens: list<string>) (lastResult: CommentToken) (result: list<CommentToken>) =
+  match tokens with
+  | token :: tail ->
+    let nextToken = List.tryHead tail
+    let converted = 
+      match lastResult with
+      | NoComment _ | EndOfComment _ when (token = "-" && nextToken = Some("-")) ->
+        StartOfComment token
+      | NoComment _ | EndOfComment _ ->
+        NoComment token
+      | InComment _ when nextToken = Some("\n") || nextToken = None ->
+        EndOfComment token
+      | InComment _ | StartOfComment _ ->
+        InComment token
+      | _ ->
+        failwith token
+    convertToCommentTokens tail converted (converted::result)
+  | [] ->
+    List.rev result
+
+// Combine tokens that together are one comment.
+// This is useful because a comment may contain a keyword as in -- Make an update.
+let rec combineCommentTokens (tokens: list<string>) =
+  let markedTokens = convertToCommentTokens tokens (NoComment "") []
   
-  // if tokens do
-  //   if (token = "'") then
-  //     combinedTokens <- token :: combinedTokens
+  let rec doCombine (tokens: list<CommentToken>) (currentCommentTokens: list<string>) (newTokens: list<string>) =
+    match tokens with
+    | head::tail ->
+      let (currentCommentParts, newTokensResult) = 
+        match head with
+        | NoComment value -> [], (value::newTokens)
+        | StartOfComment value -> [value], newTokens
+        | InComment value -> 
+          (value::currentCommentTokens), newTokens
+        | EndOfComment value -> 
+          let tokensOfComment = List.rev (value::currentCommentTokens)
+          let strWithComments = String.Join("", tokensOfComment)
+          [], (strWithComments::newTokens)
+      doCombine tail currentCommentParts newTokensResult
+    | [] -> newTokens
 
-// // Combine tokens that together are one comment.
-// let combineCommentTokens sqlStr =
-//   let tokens = tokenize sqlStr
-
-let formatSql sqlStr =
-  sqlStr
+  List.rev (doCombine markedTokens [] [])

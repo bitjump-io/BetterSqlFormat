@@ -22,6 +22,12 @@ let sql6 = @"select 'What''s \that?; .-|\"" bike.', 'x',4+5"
 
 let sql7 = @"select '''','''''valid sql''' "
 
+let sql8 = @"select -- hello world!"
+
+let sql9 = @"select -- hello
+-- world
+select 4"
+
 [<Fact>]
 let ``tokenize test sql1`` () =
   let actual = tokenize sql1
@@ -65,4 +71,18 @@ let ``combineStringTokens test sql7`` () =
   let tokens = tokenize sql7
   let actual = combineStringTokens tokens
   let expected = ["select"; " "; "''''"; ","; "'''''valid sql'''"; " "]
+  Assert.True((actual = expected))
+
+[<Fact>]
+let ``combineCommentTokens test sql8`` () =
+  let tokens = tokenize sql8
+  let actual = combineCommentTokens tokens
+  let expected = ["select"; " "; "-- hello world!"]
+  Assert.True((actual = expected))
+
+[<Fact>]
+let ``combineCommentTokens test sql9`` () =
+  let tokens = tokenize sql9
+  let actual = combineCommentTokens tokens
+  let expected = ["select"; " "; "-- hello"; "\n"; "-- world"; "\n"; "select"; " "; "4"]
   Assert.True((actual = expected))

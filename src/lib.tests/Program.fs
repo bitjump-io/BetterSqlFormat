@@ -5,5 +5,5 @@ open SimpleFormatTests
 [<EntryPoint>]
 let main _ =
   // Add the test to debug here.
-  ``combineStringTokens test sql7``()
+  ``combineCommentTokens test sql8``()
   0
