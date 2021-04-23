@@ -30,6 +30,14 @@ let sql10 = @"select -- hello
 -- world
 select 4"
 
+let sql11 = @"select 4/*-- hello
+-- world
+select 4*/"
+
+let sql12 = @"select /* some comment */'world'"
+
+let sql13 = @"select /* nested /* so*/me */4"
+
 [<Fact>]
 let ``tokenize test sql1`` () =
   let actual = tokenize sql1
@@ -94,4 +102,25 @@ let ``combineCommentTokens test sql10`` () =
   let tokens = tokenize sql10
   let actual = combineCommentTokens tokens
   let expected = ["select"; " "; "-- hello"; "\n"; "-- world"; "\n"; "select"; " "; "4"]
+  Assert.True((actual = expected))
+
+[<Fact>]
+let ``combineMLCommentTokens test sql11`` () =
+  let tokens = tokenize sql11
+  let actual = combineMLCommentTokens tokens
+  let expected = ["select"; " "; "4"; "/*-- hello\n-- world\nselect 4*/"]
+  Assert.True((actual = expected))
+
+[<Fact>]
+let ``combineMLCommentTokens test sql12`` () =
+  let tokens = tokenize sql12
+  let actual = combineMLCommentTokens tokens
+  let expected = ["select"; " "; "/* some comment */"; "'"; "world"; "'"]
+  Assert.True((actual = expected))
+
+[<Fact>]
+let ``combineMLCommentTokens test sql13`` () =
+  let tokens = tokenize sql13
+  let actual = combineMLCommentTokens tokens
+  let expected = ["select"; " "; "/* nested /* so*/me */"; "4"]
   Assert.True((actual = expected))

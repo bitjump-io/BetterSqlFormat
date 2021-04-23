@@ -8,6 +8,8 @@ type Token =
 type Whitespace = 
 | Whitespace of string
 
+type Whitespaces = Whitespace list
+
 type Alias =
 | Alias of string // as abc
 
@@ -21,7 +23,7 @@ type SelectColumn =
 | Expression of string
 
 type SelectColumnWithAlias =
-| SelectColumn of SelectColumn * Whitespace list * Alias
+| SelectColumn of SelectColumn * Whitespaces * Alias
 
 type Top =
 | Top of string // TOP ( expression ) [PERCENT] [ WITH TIES ] 

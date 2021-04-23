@@ -3,6 +3,9 @@ module Main
 open Model
 open System
 
+// See Rules for Regular Identifiers: https://docs.microsoft.com/en-us/previous-versions/sql/sql-server-2008-r2/ms175874(v=sql.105)
+
+
 let tokenize (sqlStr: string) =
   // Add characters to the token until there is a separator.
   // Each separtor is a separate token.
@@ -122,7 +125,7 @@ type CommentToken =
 | NoComment of string
 | InComment of string
 | StartOfComment of string // Should always be '-'.
-| EndOfComment of string // Should always be "\n" or "" (empty string if last character in text).
+| EndOfComment of string // The last character in the line before \n.
 
 // Converts list of string in list of CommentToken.
 let rec convertToCommentTokens (tokens: list<string>) (lastResult: CommentToken) (result: list<CommentToken>) =
@@ -163,6 +166,59 @@ let rec combineCommentTokens (tokens: list<string>) =
           let tokensOfComment = List.rev (value::currentCommentTokens)
           let strWithComments = String.Join("", tokensOfComment)
           [], (strWithComments::newTokens)
+      doCombine tail currentCommentParts newTokensResult
+    | [] -> newTokens
+
+  List.rev (doCombine markedTokens [] [])
+
+type MultiLineCommentToken =
+| NoMLComment of string * int // int refers to the nesting level starting at 0. For this case always 0.
+| InMLComment of string * int // int refers to the nesting level starting at 0.
+| StartOfMLComment of string * int // Should always be '/'. int refers to the nesting level starting at 0.
+| EndOfMLComment of string * int // Should always be '/'. int refers to the nesting level starting at 0.
+
+// Converts list of string in list of MultiLineCommentToken.
+let rec convertToMLCommentTokens (tokens: list<string>) (lastResult: MultiLineCommentToken) (result: list<MultiLineCommentToken>) =
+  match tokens with
+  | token :: tail ->
+    let nextToken = List.tryHead tail
+    let converted = 
+      match lastResult with
+      | InMLComment (_, nestingLevel) when token = "/" && nextToken = Some("*") ->
+        StartOfMLComment (token, nestingLevel + 1)
+      | NoMLComment (_, nestingLevel) | EndOfMLComment (_, nestingLevel) when token = "/" && nextToken = Some("*") ->
+        StartOfMLComment (token, nestingLevel)
+      | EndOfMLComment (_, nestingLevel) when nestingLevel > 0 ->
+        InMLComment (token, nestingLevel - 1)
+      | NoMLComment _ | EndOfMLComment _ ->
+        NoMLComment (token, 0)
+      | InMLComment (previousToken, nestingLevel) when previousToken = "*" && token = "/" ->
+        EndOfMLComment (token, nestingLevel)
+      | InMLComment (_, nestingLevel) | StartOfMLComment (_, nestingLevel) ->
+        InMLComment (token, nestingLevel)
+      | _ ->
+        failwith token
+    convertToMLCommentTokens tail converted (converted::result)
+  | [] ->
+    List.rev result
+
+// Combine tokens that together are one multiline comment.
+let rec combineMLCommentTokens (tokens: list<string>) =
+  let markedTokens = convertToMLCommentTokens tokens (NoMLComment ("", 0)) []
+  
+  let rec doCombine (tokens: list<MultiLineCommentToken>) (currentCommentTokens: list<string>) (newTokens: list<string>) =
+    match tokens with
+    | head::tail ->
+      let (currentCommentParts, newTokensResult) = 
+        match head with
+        | NoMLComment (value, _) -> [], (value::newTokens)
+        | StartOfMLComment (value, nestingLevel) when nestingLevel = 0 -> [value], newTokens
+        | EndOfMLComment (value, nestingLevel) when nestingLevel = 0 -> 
+          let tokensOfComment = List.rev (value::currentCommentTokens)
+          let strWithComments = String.Join("", tokensOfComment)
+          [], (strWithComments::newTokens)
+        | InMLComment (value, _) | StartOfMLComment (value, _) | EndOfMLComment (value, _) -> 
+          (value::currentCommentTokens), newTokens
       doCombine tail currentCommentParts newTokensResult
     | [] -> newTokens
 
