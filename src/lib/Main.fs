@@ -121,48 +121,51 @@ let rec combineStringTokens (tokens: list<string>) =
 
   List.rev (doCombine markedTokens [] [])
 
-type CommentToken =
-| NoComment of string
-| InComment of string
-| StartOfComment of string // Should always be '-'.
-| EndOfComment of string // The last character in the line before \n.
+type Simple4StateToken =
+| OutsideToken of string
+| InToken of string
+| StartOfToken of string
+| EndOfToken of string // For line comment tokens, the last character in the line before \n.
 
+// Must first combine multiline tokens because then there is just one token for multiline.
 // Converts list of string in list of CommentToken.
-let rec convertToCommentTokens (tokens: list<string>) (lastResult: CommentToken) (result: list<CommentToken>) =
+let rec convertToSimple4StateTokens (tokens: list<string>) (lastResult: Simple4StateToken) (result: list<Simple4StateToken>) 
+  (fnIsTokenStart: string * Option<string> -> bool) (fnIsTokenEnd: string * Option<string> -> bool) =
   match tokens with
   | token :: tail ->
     let nextToken = List.tryHead tail
     let converted = 
       match lastResult with
-      | NoComment _ | EndOfComment _ when (token = "-" && nextToken = Some("-")) ->
-        StartOfComment token
-      | NoComment _ | EndOfComment _ ->
-        NoComment token
-      | InComment _ when nextToken = Some("\n") || nextToken = None ->
-        EndOfComment token
-      | InComment _ | StartOfComment _ ->
-        InComment token
+      | OutsideToken _ | EndOfToken _ when fnIsTokenStart(token, nextToken) -> // token = startOfTokenChar1 && (startOfTokenChar2 = None || nextToken = startOfTokenChar2) ->
+        StartOfToken token
+      | OutsideToken _ | EndOfToken _ ->
+        OutsideToken token
+      | InToken _ when fnIsTokenEnd(token, nextToken) -> //nextToken = Some(endOfTokenChar) || nextToken = None ->
+        EndOfToken token
+      | InToken _ | StartOfToken _ ->
+        InToken token
       | _ ->
         failwith token
-    convertToCommentTokens tail converted (converted::result)
+    convertToSimple4StateTokens tail converted (converted::result) fnIsTokenStart fnIsTokenEnd
   | [] ->
     List.rev result
 
 // Combine tokens that together are one comment.
 // This is useful because a comment may contain a keyword as in -- Make an update.
-let rec combineCommentTokens (tokens: list<string>) =
-  let markedTokens = convertToCommentTokens tokens (NoComment "") []
+let rec combineSimple4StateTokens (tokens: list<string>) 
+  (fnIsTokenStart: string * Option<string> -> bool) (fnIsTokenEnd: string * Option<string> -> bool) =
+  let markedTokens = convertToSimple4StateTokens tokens (OutsideToken "") [] fnIsTokenStart fnIsTokenEnd
   
-  let rec doCombine (tokens: list<CommentToken>) (currentCommentTokens: list<string>) (newTokens: list<string>) =
+  let rec doCombine (tokens: list<Simple4StateToken>) (currentCommentTokens: list<string>) (newTokens: list<string>) =
     match tokens with
     | head::tail ->
       let (currentCommentParts, newTokensResult) = 
         match head with
-        | NoComment value -> [], (value::newTokens)
-        | StartOfComment value -> [value], newTokens
-        | InComment value -> 
+        | OutsideToken value -> [], (value::newTokens)
+        | StartOfToken value -> [value], newTokens
+        | InToken value -> 
           (value::currentCommentTokens), newTokens
-        | EndOfComment value -> 
+        | EndOfToken value -> 
           let tokensOfComment = List.rev (value::currentCommentTokens)
           let strWithComments = String.Join("", tokensOfComment)
           [], (strWithComments::newTokens)
@@ -170,6 +173,9 @@ let rec combineCommentTokens (tokens: list<string>) =
     | [] -> newTokens
 
   List.rev (doCombine markedTokens [] [])
+
+let rec combineCommentTokens (tokens: list<string>) =
+  combineSimple4StateTokens tokens (fun (token, nextToken) -> token = "-" && nextToken = Some("-")) (fun (_, nextToken) -> nextToken = Some("\n") || nextToken = None)
 
 type MultiLineCommentToken =
 | NoMLComment of string * int // int refers to the nesting level starting at 0. For this case always 0.
@@ -223,3 +229,16 @@ let rec combineMLCommentTokens (tokens: list<string>) =
     | [] -> newTokens
 
   List.rev (doCombine markedTokens [] [])
+
+let rec combineBracketTokens (tokens: list<string>) =
+  combineSimple4StateTokens tokens (fun (token, _) -> token = "[") (fun (token, _) -> token = "]")
+
+
+let combineTokens (tokens: list<string>) =
+  // Order is important because combining tokens eg in one string literal prevents later combiners from matching the original tokens
+  // as they only see one token for the string.
+  let withMLComments = combineMLCommentTokens tokens
+  let withComments = combineCommentTokens withMLComments
+  let withStrings = combineStringTokens withComments
+  let withBrackets = combineBracketTokens withStrings
+  withBrackets

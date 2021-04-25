@@ -38,6 +38,8 @@ let sql12 = @"select /* some comment */'world'"
 
 let sql13 = @"select /* nested /* so*/me */4"
 
+let sql14 = @"select [my col], [other]"
+
 [<Fact>]
 let ``tokenize test sql1`` () =
   let actual = tokenize sql1
@@ -124,3 +126,11 @@ let ``combineMLCommentTokens test sql13`` () =
   let actual = combineMLCommentTokens tokens
   let expected = ["select"; " "; "/* nested /* so*/me */"; "4"]
   Assert.True((actual = expected))
+
+[<Fact>]
+let ``combineBracketTokens test sql14`` () =
+  let tokens = tokenize sql14
+  let actual = combineBracketTokens tokens
+  let expected = ["select"; " "; "[my col]"; ","; " "; "[other]"]
+  Assert.True((actual = expected))
+  
