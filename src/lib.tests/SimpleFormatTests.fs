@@ -40,6 +40,8 @@ let sql13 = @"select /* nested /* so*/me */4"
 
 let sql14 = @"select [my col], [other]"
 
+let sql15 = @"select ""my col"", ""other"""
+
 [<Fact>]
 let ``tokenize test sql1`` () =
   let actual = tokenize sql1
@@ -93,16 +95,16 @@ let ``combineStringTokens test sql8`` () =
   Assert.True((actual = expected))
 
 [<Fact>]
-let ``combineCommentTokens test sql9`` () =
+let ``combineSLCommentTokens test sql9`` () =
   let tokens = tokenize sql9
-  let actual = combineCommentTokens tokens
+  let actual = combineSLCommentTokens tokens
   let expected = ["select"; " "; "-- hello world!"]
   Assert.True((actual = expected))
 
 [<Fact>]
-let ``combineCommentTokens test sql10`` () =
+let ``combineSLCommentTokens test sql10`` () =
   let tokens = tokenize sql10
-  let actual = combineCommentTokens tokens
+  let actual = combineSLCommentTokens tokens
   let expected = ["select"; " "; "-- hello"; "\n"; "-- world"; "\n"; "select"; " "; "4"]
   Assert.True((actual = expected))
 
@@ -132,5 +134,12 @@ let ``combineBracketTokens test sql14`` () =
   let tokens = tokenize sql14
   let actual = combineBracketTokens tokens
   let expected = ["select"; " "; "[my col]"; ","; " "; "[other]"]
+  Assert.True((actual = expected))
+ 
+[<Fact>]
+let ``combineBracketTokens test sql15`` () =
+  let tokens = tokenize sql15
+  let actual = combineQuotationTokens tokens
+  let expected = ["select"; " "; "\"my col\""; ","; " "; "\"other\""]
   Assert.True((actual = expected))
   

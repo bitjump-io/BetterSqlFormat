@@ -174,7 +174,7 @@ let rec combineSimple4StateTokens (tokens: list<string>)
 
   List.rev (doCombine markedTokens [] [])
 
-let rec combineCommentTokens (tokens: list<string>) =
+let rec combineSLCommentTokens (tokens: list<string>) =
   combineSimple4StateTokens tokens (fun (token, nextToken) -> token = "-" && nextToken = Some("-")) (fun (_, nextToken) -> nextToken = Some("\n") || nextToken = None)
 
 type MultiLineCommentToken =
@@ -233,12 +233,15 @@ let rec combineMLCommentTokens (tokens: list<string>) =
 let rec combineBracketTokens (tokens: list<string>) =
   combineSimple4StateTokens tokens (fun (token, _) -> token = "[") (fun (token, _) -> token = "]")
 
+let rec combineQuotationTokens (tokens: list<string>) =
+  combineSimple4StateTokens tokens (fun (token, _) -> token = "\"") (fun (token, _) -> token = "\"")
 
 let combineTokens (tokens: list<string>) =
   // Order is important because combining tokens eg in one string literal prevents later combiners from matching the original tokens
   // as they only see one token for the string.
   let withMLComments = combineMLCommentTokens tokens
-  let withComments = combineCommentTokens withMLComments
+  let withComments = combineSLCommentTokens withMLComments
   let withStrings = combineStringTokens withComments
   let withBrackets = combineBracketTokens withStrings
-  withBrackets
+  let withQuotations = combineQuotationTokens withBrackets
+  withQuotations
