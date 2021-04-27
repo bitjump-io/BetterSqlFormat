@@ -1,4 +1,4 @@
-module Main
+module Tokenize
 
 open Model
 open System
@@ -240,8 +240,8 @@ let combineTokens (tokens: list<string>) =
   // Order is important because combining tokens eg in one string literal prevents later combiners from matching the original tokens
   // as they only see one token for the string.
   let withMLComments = combineMLCommentTokens tokens
-  let withComments = combineSLCommentTokens withMLComments
-  let withStrings = combineStringTokens withComments
+  let withSLComments = combineSLCommentTokens withMLComments
+  let withStrings = combineStringTokens withSLComments
   let withBrackets = combineBracketTokens withStrings
   let withQuotations = combineQuotationTokens withBrackets
   withQuotations

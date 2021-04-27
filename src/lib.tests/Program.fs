@@ -1,6 +1,6 @@
 module Program
 
-open SimpleFormatTests
+open TokenizeTests
 
 [<EntryPoint>]
 let main _ =

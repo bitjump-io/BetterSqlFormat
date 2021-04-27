@@ -1,8 +1,8 @@
-module SimpleFormatTests
+module TokenizeTests
 
 open System
 open Xunit
-open Main
+open Tokenize
 
 let sql1 = "select 3"
 

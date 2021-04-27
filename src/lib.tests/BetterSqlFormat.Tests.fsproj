@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="SimpleFormatTests.fs" />
+    <Compile Include="TokenizeTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
