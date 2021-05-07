@@ -1,9 +1,11 @@
 module Program
 
 open TokenizeTests
+open ParseTests
+open MainTests
 
 [<EntryPoint>]
 let main _ =
   // Add the test to debug here.
-  ``combineBracketTokens test sql14``()
+  ``main test sql1``()
   0

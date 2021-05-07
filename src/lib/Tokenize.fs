@@ -245,3 +245,62 @@ let combineTokens (tokens: list<string>) =
   let withBrackets = combineBracketTokens withStrings
   let withQuotations = combineQuotationTokens withBrackets
   withQuotations
+
+let private getToken (token: string) =
+  match token.ToUpper() with
+  | " " | "\n"| "\n"| "\r"| "\t" -> WhitespaceToken token
+  | "SELECT" -> Select token
+  | "FROM" -> From token
+  | "INNER" -> Inner token
+  | "OUTER" -> Outer token
+  | "LEFT" -> Left token
+  | "RIGHT" -> Right token
+  | "JOIN" -> Join token
+  | "AND" -> And token
+  | "ON" -> On token
+  | "WHERE" -> Where token
+  | "ORDER" -> Order token
+  | "HAVING" -> Having token
+  | "OPTION" -> Option token
+  | "," -> Comma token
+  | _ -> (AnyToken token)
+  
+
+let markTokens (tokens: list<string>) =
+  let rec doMark (tokens: list<string>) (marked: list<SqlToken>) =
+    match tokens with
+    | head::tail -> doMark tail ((getToken head)::marked)
+    | [] -> marked
+  List.rev (doMark tokens [])
+
+let combineSqlWhitespaceTokens (marked: list<SqlToken>) =
+  let rec doCombine (tokens: list<SqlToken>) (result: list<SqlToken>) (spaceTokens: list<string>) =
+    match tokens with
+    // This token is a whitespace ...
+    | (WhitespaceToken value)::tail -> 
+      match tail with
+      // and next token is also a whitespace.
+      | (WhitespaceToken _)::_ -> doCombine tail result (value::spaceTokens)
+      // and next token is no whitespace or next token is list end.
+      | _ -> doCombine tail ((WhitespaceListToken (value::spaceTokens))::result) []
+    // This token is not a whitespace.
+    | head::tail -> doCombine tail (head::result) []
+    | [] -> result
+  List.rev (doCombine marked [] [])
+
+//   | AnyToken of string
+// | WhitespaceListToken of list<string>
+// | Select of string
+// | From of string
+// | Inner of string
+// | Outer of string
+// | Left of string
+// | Right of string
+// | Join of string
+// | And of string
+// | On of string
+// | Where of string
+// | Order of string
+// | Having of string
+// | Option of string
+// | Comma of string

@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <Compile Include="TokenizeTests.fs" />
+    <Compile Include="ParseTests.fs" />
+    <Compile Include="MainTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

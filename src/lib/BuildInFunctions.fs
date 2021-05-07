@@ -1,4 +1,5 @@
 module BuildInFunctions
+// This module contains a list of t-sql build-in functions that can be called without schema prefix.
 
 // note that sql server stored procedures start with sp_
 
