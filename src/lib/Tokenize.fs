@@ -236,6 +236,15 @@ let rec combineBracketTokens (tokens: list<string>) =
 let rec combineQuotationTokens (tokens: list<string>) =
   combineSimple4StateTokens tokens (fun (token, _) -> token = "\"") (fun (token, _) -> token = "\"")
 
+let combineCRLFTokens (tokens: list<string>) =
+  let rec doCombine (tokens: list<string>) (newTokens: list<string>) =
+    match tokens with
+    | head::tail when head = "\r" && (List.tryHead tail) = Some("\n") ->
+      doCombine (List.skip 1 tail) ("\r\n"::newTokens)
+    | head::tail -> doCombine tail (head::newTokens)
+    | [] -> newTokens
+  List.rev (doCombine tokens [])
+
 let combineTokens (tokens: list<string>) =
   // Order is important because combining tokens eg in one string literal prevents later combiners from matching the original tokens
   // as they only see one token for the string.
@@ -244,63 +253,42 @@ let combineTokens (tokens: list<string>) =
   let withStrings = combineStringTokens withSLComments
   let withBrackets = combineBracketTokens withStrings
   let withQuotations = combineQuotationTokens withBrackets
-  withQuotations
+  let withCRLFCombined = combineCRLFTokens withQuotations
+  withCRLFCombined
 
 let private getToken (token: string) =
   match token.ToUpper() with
-  | " " | "\n"| "\n"| "\r"| "\t" -> WhitespaceToken token
-  | "SELECT" -> Select token
-  | "FROM" -> From token
-  | "INNER" -> Inner token
-  | "OUTER" -> Outer token
-  | "LEFT" -> Left token
-  | "RIGHT" -> Right token
-  | "JOIN" -> Join token
-  | "AND" -> And token
-  | "ON" -> On token
-  | "WHERE" -> Where token
-  | "ORDER" -> Order token
-  | "HAVING" -> Having token
-  | "OPTION" -> Option token
-  | "," -> Comma token
-  | _ -> (AnyToken token)
+  | " " | "\t" -> { Token = SpaceOrTabToken; Value = token }
+  | "\n"| "\r\n" -> { Token = NewLineToken; Value = token }
+  | "WITH" -> { Token = With; Value = token }
+  | "SELECT" -> { Token = Select; Value = token }
+  | "," -> { Token = Comma; Value = token }
+  | "FROM" -> { Token = From; Value = token }
+  | "INNER" -> { Token = Inner; Value = token }
+  | "OUTER" -> { Token = Outer; Value = token }
+  | "LEFT" -> { Token = Left; Value = token }
+  | "RIGHT" -> { Token = Right; Value = token }
+  | "FULL" -> { Token = Full; Value = token }
+  | "CROSS" -> { Token = Cross; Value = token }
+  | "APPLY" -> { Token = Apply; Value = token }
+  | "JOIN" -> { Token = Join; Value = token }
+  | "AND" -> { Token = And; Value = token }
+  | "ON" -> { Token = On; Value = token }
+  | "WHERE" -> { Token = Where; Value = token }
+  | "GROUP BY" -> { Token = GroupBy; Value = token }
+  | "HAVING" -> { Token = Having; Value = token }
+  | "ORDER BY" -> { Token = OrderBy; Value = token }
+  | "OPTION" -> { Token = Option; Value = token }
+  | "UNION ALL" -> { Token = UnionAll; Value = token }
+  | "UNION" -> { Token = Union; Value = token }
+  | "EXCEPT" -> { Token = Except; Value = token }
+  | "INTERSECT" -> { Token = Intersect; Value = token }
+  | "INTO" -> { Token = Into; Value = token }
+  | _-> { Token = AnyToken; Value = token }
   
-
 let markTokens (tokens: list<string>) =
-  let rec doMark (tokens: list<string>) (marked: list<SqlToken>) =
+  let rec doMark (tokens: list<string>) (marked: list<TokenVal>) =
     match tokens with
     | head::tail -> doMark tail ((getToken head)::marked)
     | [] -> marked
   List.rev (doMark tokens [])
-
-let combineSqlWhitespaceTokens (marked: list<SqlToken>) =
-  let rec doCombine (tokens: list<SqlToken>) (result: list<SqlToken>) (spaceTokens: list<string>) =
-    match tokens with
-    // This token is a whitespace ...
-    | (WhitespaceToken value)::tail -> 
-      match tail with
-      // and next token is also a whitespace.
-      | (WhitespaceToken _)::_ -> doCombine tail result (value::spaceTokens)
-      // and next token is no whitespace or next token is list end.
-      | _ -> doCombine tail ((WhitespaceListToken (value::spaceTokens))::result) []
-    // This token is not a whitespace.
-    | head::tail -> doCombine tail (head::result) []
-    | [] -> result
-  List.rev (doCombine marked [] [])
-
-//   | AnyToken of string
-// | WhitespaceListToken of list<string>
-// | Select of string
-// | From of string
-// | Inner of string
-// | Outer of string
-// | Left of string
-// | Right of string
-// | Join of string
-// | And of string
-// | On of string
-// | Where of string
-// | Order of string
-// | Having of string
-// | Option of string
-// | Comma of string
