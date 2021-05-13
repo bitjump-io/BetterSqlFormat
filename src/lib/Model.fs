@@ -3,6 +3,7 @@ module Model
 // https://docs.microsoft.com/en-us/sql/t-sql/queries/select-transact-sql?view=sql-server-ver15
 // https://docs.microsoft.com/en-us/sql/t-sql/queries/from-transact-sql?view=sql-server-ver15
 
+// Value is not part of union item to be able to compare a list of SqlToken with another list of SqlToken independent of the value.
 type SqlToken =
 | EmptyToken
 | AnyToken
@@ -36,3 +37,8 @@ type SqlToken =
 // Value is the Value as in the unformatted input string.
 [<System.Diagnostics.DebuggerDisplay("\{Token = {Token}; Value = {Value}\}")>]
 type TokenVal = { Token: SqlToken; Value: string }
+
+type TokenExpr =
+  | Val of SqlToken
+  | Optional of TokenExpr
+  | Or of TokenExpr * TokenExpr
