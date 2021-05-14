@@ -46,8 +46,8 @@ let private findFirstMatch (tokens: list<TokenVal>) (tokenExpr: TokenExpr) =
 let private replaceTokens (tokens: list<TokenVal>) (tokenExpr: TokenExpr) (replaceSeq: list<TokenVal>) =
   let rec doReplaceTokens (tokens: list<TokenVal>) (result: list<TokenVal>) =
     match findFirstMatch tokens tokenExpr with
-    | MatchSuccess (skippedTokens, []) -> (List.rev skippedTokens)@(replaceSeq)@result
-    | MatchSuccess (skippedTokens, remList) -> doReplaceTokens remList ((List.rev skippedTokens)@(replaceSeq)@result)
+    | MatchSuccess (skippedTokens, []) -> result@(List.rev skippedTokens)@replaceSeq
+    | MatchSuccess (skippedTokens, remList) -> doReplaceTokens remList (result@(List.rev skippedTokens)@replaceSeq)
     | MatchFailure -> result@tokens
   doReplaceTokens tokens []
 
