@@ -8,5 +8,5 @@ open TokenExprTests
 [<EntryPoint>]
 let main _ =
   // Add the test to debug here.
-  ``isMatch Optional(Val(From)) matches Select without consuming``()
+  ``main test sql1``()
   0

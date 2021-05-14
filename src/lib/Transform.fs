@@ -9,9 +9,14 @@ let rec isMatch (input: list<TokenVal>) (tokenExpr: TokenExpr) =
   | head::tail ->
     match tokenExpr with
     | Val value -> (value = head.Token, tail)
-    | Optional expr -> 
+    | ZeroOrOne expr -> 
       match isMatch input expr with
       | (true, remList) -> (true, remList)
+      | (false, _) -> (true, input)
+    | ZeroOrMore expr -> 
+      match isMatch input expr with
+      | (true, [])  -> (true, [])
+      | (true, remList) -> isMatch remList tokenExpr
       | (false, _) -> (true, input)
     | Or (leftExpr, rightExpr) ->
       match isMatch input leftExpr with
@@ -20,35 +25,39 @@ let rec isMatch (input: list<TokenVal>) (tokenExpr: TokenExpr) =
         match isMatch input rightExpr with
         | (true, remList) -> (true, remList)
         | (false, _) -> (false, input)
+    | AndThen (leftExpr, rightExpr) ->
+      match isMatch input leftExpr with
+      | (false, _) -> (false, input)
+      | (true, remList) ->
+        match isMatch remList rightExpr with
+        | (true, remList2) -> (true, remList2)
+        | (false, _) -> (false, input)
 
-let rec private findFirstMatch (tokens: list<TokenVal>) (tokenExpr: TokenExpr) =
-  match isMatch tokens tokenExpr with
-  | (true, remList) -> (true, remList)
-  | (false, _) ->
-    match tokens with
-    | _::tail -> findFirstMatch tail tokenExpr
-    | [] -> (false, [])
+let private findFirstMatch (tokens: list<TokenVal>) (tokenExpr: TokenExpr) =
+  let rec doFindFirstMatch (tokens: list<TokenVal>) (skippedTokens: list<TokenVal>) =
+    match isMatch tokens tokenExpr with
+    | (true, remList) -> MatchSuccess (skippedTokens, remList)
+    | (false, _) ->
+      match tokens with
+      | head::tail -> doFindFirstMatch tail (head::skippedTokens)
+      | [] -> MatchFailure
+  doFindFirstMatch tokens []
 
-let rec private replaceTokens (tokens: list<TokenVal>) (tokenExpr: TokenExpr) (replaceSeq: list<TokenVal>) (result: list<TokenVal>) =
-  match findFirstMatch tokens tokenExpr with
-  | (true, []) -> List.rev ((List.rev replaceSeq)@result)
-  | (true, remList) -> replaceTokens remList tokenExpr replaceSeq (List.rev replaceSeq)@result
-  | (false, []) -> List.rev result
-  | _ -> failwith "should not happen"
+let private replaceTokens (tokens: list<TokenVal>) (tokenExpr: TokenExpr) (replaceSeq: list<TokenVal>) =
+  let rec doReplaceTokens (tokens: list<TokenVal>) (result: list<TokenVal>) =
+    match findFirstMatch tokens tokenExpr with
+    | MatchSuccess (skippedTokens, []) -> (List.rev skippedTokens)@(replaceSeq)@result
+    | MatchSuccess (skippedTokens, remList) -> doReplaceTokens remList ((List.rev skippedTokens)@(replaceSeq)@result)
+    | MatchFailure -> result@tokens
+  doReplaceTokens tokens []
 
-let private replaceMatchedTokens (tokens: list<TokenVal>) (matchSequ: list<SqlToken>) (replaceSeq: list<TokenVal>) =
-  let replaceSeqRev = List.rev replaceSeq
-  let windowLen = List.length matchSequ
-  let rec doReplace (tokens: list<list<TokenVal>>) (lastTokens: list<TokenVal>) (result: list<TokenVal>) =
-    match tokens with
-    | head::tail when (head |> List.map (fun x -> x.Token)) = matchSequ -> doReplace (List.skip (windowLen-1) tail) [] (replaceSeqRev@result)
-    | head::tail -> doReplace tail (List.tail head) ((List.head head)::result)
-    | [] -> (List.rev lastTokens)@result
-  let windowedTokens = List.windowed windowLen tokens
-  doReplace windowedTokens [] [] |> List.rev
+let addLineBreaks (tokens: list<TokenVal>) (newLineStr: string) =
+  let tokens = replaceTokens tokens (AndThen(ZeroOrMore(Val(SpaceOrTabToken)), Val(From))) [{ Token = NewLineToken; Value = newLineStr}; { Token = From; Value = "FROM"}]
+  let tokens = replaceTokens tokens (AndThen(ZeroOrMore(Val(SpaceOrTabToken)), Val(Where))) [{ Token = NewLineToken; Value = newLineStr}; { Token = Where; Value = "WHERE"}]
+  tokens
 
 let replaceSpaceAfterComma (tokens: list<TokenVal>) =
-  replaceMatchedTokens tokens [NewLineToken; Comma; SpaceOrTabToken ] [{ Token = NewLineToken; Value = "\n"}; { Token = Comma; Value = ","}]
+  replaceTokens tokens (AndThen(Val(NewLineToken), AndThen(Val(Comma), Val(SpaceOrTabToken)))) [{ Token = NewLineToken; Value = "\n"}; { Token = Comma; Value = ","}]
 
 let toString (tokens: list<TokenVal>) =
   let rec doToString (tokens: list<TokenVal>) (accumulator: string) =
