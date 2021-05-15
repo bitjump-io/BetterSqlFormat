@@ -11,6 +11,7 @@ type SqlToken =
 | NewLineToken
 | With
 | Select
+| Star // *
 | Comma
 | From
 | Inner
@@ -33,6 +34,27 @@ type SqlToken =
 | Except
 | Intersect
 | Into
+| VariableName // starts with @
+| OtherKeyword // see module Keywords
+| DataType // see module DataTypes
+| BuildInFunctionCall // see module BuildInFunctions, also for functions starting with @@
+| BuildInVariable // e.g. @@ROWCOUNT
+| UdfCall // User-defined-function
+| Semicolon
+| NullLitaral
+| NumberLiteral
+| BooleanLiteral
+| StringLiteral
+| ScopeResolutionOp // ::
+| AssignmentOp // = += -= *= /= %= &= ^= |=
+| ComparisionOp // = > < >= <= <> !< != !>
+| ArithmeticOp // + - * / ~ & | ^ ~
+| MemberSeparatorOp // .
+| OpenParenthesis
+| CloseParenthesis
+| MultiLineComment
+| SingleLineComment
+| Temptable // #Bicycles
 
 // Value is the Value as in the unformatted input string.
 [<System.Diagnostics.DebuggerDisplay("\{Token = {Token}; Value = {Value}\}")>]

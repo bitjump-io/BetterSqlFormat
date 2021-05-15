@@ -7,6 +7,9 @@
     <Compile Include="Tokenize.fs" />
     <Compile Include="BuildInFunctions.fs" />
     <Compile Include="DataTypes.fs" />
+    <Compile Include="LogicalOperators.fs" />
+    <Compile Include="OtherOperators.fs" />
+    <Compile Include="Keywords.fs" />
     <Compile Include="General.fs" />
     <Compile Include="Transform.fs" />
     <Compile Include="Main.fs" />

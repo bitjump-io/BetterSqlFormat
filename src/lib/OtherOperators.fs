@@ -1,0 +1,3 @@
+module OtherOperators
+
+let scopeResolutionOperator = "::"
