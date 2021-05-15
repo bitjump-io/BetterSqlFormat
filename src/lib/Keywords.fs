@@ -1,6 +1,7 @@
 module Keywords
 
 // Keywords that are used in processing logic are also inluded in the SqlToken module.
+// Also see https://en.wikipedia.org/wiki/SQL_reserved_words
 
 let keywords = [
   "with";
@@ -233,5 +234,80 @@ let keywords = [
   "explain";
   "last_node";
   "shortest_path";
+  "raiserror";
+  "checkpoint";
+  "kill";
+  "stats";
+  "job";
+  "reconfigure";
+  "shutdown";
+  "within_group";
+  "when";
+  "varying";
+  "user";
+  "unique";
+  "tsequal";
+  "truncate";
+  "trigger";
+  "tran";
+  "textsize";
+  "statistics";
+  "setuser";
+  "semanticsimilaritytable";
+  "semanticsimilaritydetailstable";
+  "semantickeyphrasetable";
+  "securityaudit";
+  "schema";
+  "rule";
+  "rowguidcol";
+  "rowcount";
+  "revoke";
+  "revert";
+  "restrict";
+  "restore";
+  "replication";
+  "references";
+  "read";
+  "public";
+  "proc";
+  "primary";
+  "precision";
+  "offsets";
+  "nonclustered";
+  "nocheck";
+  "national";
+  "load";
+  "lineno";
+  "key";
+  "is";
+  "identitycol";
+  "identity_insert";
+  "grant";
+  "function";
+  "freetexttable";
+  "foreign";
+  "fillfactor";
+  "external";
+  "exit";
+  "execute";
+  "errlvl";
+  "dump";
+  "double";
+  "disk";
+  "deny";
+  "dbcc";
+  "current_user";
+  "current_timestamp";
+  "current_time";
+  "current_date";
+  "containstable";
+  "constraint";
+  "compute";
+  "column";
+  "clustered";
+  "check";
+  "cascade";
+  "backup";
+  "authorization";
   // todo: https://docs.microsoft.com/en-us/sql/t-sql/queries/hints-transact-sql?view=sql-server-ver15
 ]

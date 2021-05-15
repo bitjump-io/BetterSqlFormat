@@ -4,6 +4,8 @@ open Model
 open Tokenize
 open General
 open Transform
+open Keywords
+open BuildInFunctions
 
 let format sqlStr =
   let tokens = tokenize sqlStr
@@ -14,3 +16,6 @@ let format sqlStr =
   let noSpaceAfterComma = replaceSpaceAfterComma withLineBreaks
   let asStr = toString noSpaceAfterComma
   asStr
+
+let keywords2: list<string> = keywords
+let buildInFuncs: list<string> = buildInFunctions

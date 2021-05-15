@@ -8,5 +8,5 @@ open TokenExprTests
 [<EntryPoint>]
 let main _ =
   // Add the test to debug here.
-  ``main test sql1``()
+  ``keywordTest``()
   0
