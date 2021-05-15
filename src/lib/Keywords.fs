@@ -144,6 +144,7 @@ let keywords = [
   "$action"; // OUTPUT $action
   "$identity";
   "$rowguid";
+  "$node_id";
   "then";
   "view";
   "output";
@@ -172,8 +173,65 @@ let keywords = [
   "for"; // FOR BROWSE 
   "browse";
   "pivot";
+  "unpivot";
   "xmlnamespaces";
   "cube";
   "rollup";
-  // todo: https://docs.microsoft.com/en-us/sql/t-sql/queries/select-for-clause-transact-sql?view=sql-server-ver15
+  "UNIQUE"; // INT NULL UNIQUE
+  "VALUES";
+  "NO_BROWSETABLE"; // strictly this is an option not a keyword
+  "xml";
+  "path";
+  "auto"; // XML mode. FOR XML AUTO, TYPE, XMLSCHEMA, ELEMENTS XSINIL;
+  "raw"; // XML mode.
+  "explicit"; // XML mode.
+  "type"; // strictly this is an option not a keyword
+  "xmldata"; // strictly this is an option not a keyword
+  "xmlschema"; // strictly this is an option not a keyword
+  "elements"; // strictly this is an option not a keyword
+  "xsinil";  // strictly this is an option not a keyword
+  "absent";  // strictly this is an option not a keyword
+  "binary";
+  "base64";
+  "root";
+  "json";
+  "include_null_values";
+  "without_array_wrapper";
+  "rollup"; // GROUP BY ROLLUP (col1, col2, col3, col4) 
+  "cube"; // GROUP BY CUBE (Country, Region)
+  "grouping"; // GROUP BY GROUPING SETS ( ROLLUP (Country, Region), CUBE (Country, Region) )
+  "sets";
+  "distributed_agg"; // GROUP BY CustomerKey WITH (DISTRIBUTED_AGG)
+  "exec";
+  "add";
+  "file";
+  "to";
+  "filegroup";
+  "collate";
+  "row";
+  "rows";
+  "first";
+  "next";
+  "only";
+  "over"; // count(*) over(order by object_id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )
+  "partition";
+  "range";
+  "unbounded";
+  "preceding";
+  "following";
+  "current";
+  "system_time"; // FOR SYSTEM_TIME <system_time> ] [ AS ] table_alia
+  "openxml";
+  "tablesample";
+  "system";
+  "repeatable";
+  "contained"; // CONTAINED IN (<start_date_time> , <end_date_time>)
+  "of"; // AS OF <date_time>
+  "reduce"; // join hint
+  "replicate"; // join hint
+  "redistribute"; // join hint
+  "explain";
+  "last_node";
+  "shortest_path";
+  // todo: https://docs.microsoft.com/en-us/sql/t-sql/queries/hints-transact-sql?view=sql-server-ver15
 ]

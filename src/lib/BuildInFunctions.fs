@@ -86,7 +86,7 @@ let buildInFunctions = [
   "IDENT_CURRENT";
   "IDENT_INCR";
   "IDENT_SEED";
-  "IDENTITY";
+  "IDENTITY"; // SELECT IDENTITY (int, 100, 5) AS AddressID
   "SQL_VARIANT_PROPERTY";
   
   // Date and Time

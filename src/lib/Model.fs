@@ -40,6 +40,7 @@ type SqlToken =
 | BuildInFunctionCall // see module BuildInFunctions, also for functions starting with @@
 | BuildInVariable // e.g. @@ROWCOUNT
 | UdfCall // User-defined-function
+//| StoredProcedureCall // EXEC sp_addlinkedserver
 | Semicolon
 | NullLitaral
 | NumberLiteral
